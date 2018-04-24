@@ -9,7 +9,10 @@ class Counter {
     private int hitCounter = 0;
 
     void inc() {
+        ++hitCounter;
+        --hitCounter;
         hitCounter++;
+
     }
 
     int getCounter() {
@@ -23,24 +26,22 @@ class Counter {
  */
 public class ThreadSafe {
     public static void main(String... args) {
-        final var N = 10000;
-        final int[] v = new int[]{0};
+        final var N = 1000;
+        final var container = new int[]{0};
         final var c = new Counter();
         final var gate = new CyclicBarrier(N + 1);
         final List<Thread> pool = new ArrayList<Thread>(N);
         for (var i = 0; i < N; i++) {
-            var t = new Thread(() -> {
+            pool.add(new Thread(() -> {
                 try {
                     gate.await();
                     c.inc();
-                    v[0]++;
+                    container[0]++;
                 } catch (InterruptedException | BrokenBarrierException e) {
                     e.printStackTrace();
                 }
-            });
-            pool.add(t);
-            t.setName("Thread:" + (i + 1));
-            t.start();
+            }, "My thread " + (i + 1)));
+            pool.get(i).start();
         }
         try {
             gate.await();
@@ -48,8 +49,15 @@ public class ThreadSafe {
             for (var t : pool) {
                 t.join();
             }
-            System.out.println(c.getCounter());
-            System.out.println(v[0]);
+            final var value1 = c.getCounter();
+            final var value2 = container[0];
+            System.out.println("N = " + N + ", value1 = " + value1 + ", value2 = " + value2);
+            if (value1 != N || value2 != N) {
+                System.out.println("Race condition has occurred!!!");
+            } else {
+                System.out.println("No race condition...");
+            }
+
         } catch (InterruptedException | BrokenBarrierException e) {
             e.printStackTrace();
         }
