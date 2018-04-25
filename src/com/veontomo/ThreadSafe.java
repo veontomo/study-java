@@ -26,7 +26,7 @@ class Counter {
  */
 public class ThreadSafe {
     public static void main(String... args) {
-        final var N = 1000;
+        final var N = 6;
         final var container = new int[]{0};
         final var c = new Counter();
         final var gate = new CyclicBarrier(N + 1);
@@ -34,18 +34,21 @@ public class ThreadSafe {
         for (var i = 0; i < N; i++) {
             pool.add(new Thread(() -> {
                 try {
+                    System.out.println("Thread " + Thread.currentThread().getName() + " is waiting...");
                     gate.await();
+                    System.out.println("Thread " + Thread.currentThread().getName() + " is proceeding...");
                     c.inc();
                     container[0]++;
                 } catch (InterruptedException | BrokenBarrierException e) {
                     e.printStackTrace();
                 }
-            }, "My thread " + (i + 1)));
+            }, "My-thread-" + (i + 1)));
             pool.get(i).start();
         }
         try {
+            System.out.println("Last part is added");
             gate.await();
-            System.out.println("waiting...");
+            System.out.println("waiting for all threads to join...");
             for (var t : pool) {
                 t.join();
             }
